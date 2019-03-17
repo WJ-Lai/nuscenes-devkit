@@ -1,3 +1,16 @@
+#### 运行RADAR和LIDAR视频
+```
+# choose scene
+my_scene_token = nusc.field2token('scene', 'name', 'scene-0049')[0]
+scene_rec = nusc.get('scene',my_scene_token)
+
+# save the picture which are load latter——只需一次
+inf_list = nusc.save_sample_data(scene_rec['first_sample_token'], 'LIDAR_TOP')
+
+# show picture
+nusc.render_pointcloud_channel()
+```
+
 # nuScenes devkit
 Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
  
