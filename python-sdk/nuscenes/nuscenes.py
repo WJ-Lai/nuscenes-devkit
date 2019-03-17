@@ -401,14 +401,14 @@ class NuScenes:
     def save_sample_token(self, start_sample_token: str) -> List[str]:
         return self.explorer.save_sample_token(start_sample_token)
 
-    def save_sample_data(self, start_sample_token: str, channel: str='RADAR_FRONT_RIGHT', with_anns: bool=True,
+    def save_sample_data(self, start_sample_token: str, channel: str='RADAR_FRONT', with_anns: bool=True,
                            box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=1) -> None:
+                           nsweeps: int=1) -> None :
         self.explorer.save_sample_data(start_sample_token, channel, with_anns, 
                                        box_vis_level, axes_limit, ax, nsweeps=nsweeps)
 
-    def render_pointcloud_channel(self, scene_token: str, channel: str='RADAR_FRONT', imsize: Tuple[float, float]=(640, 360)):
-        self.explorer.render_pointcloud_channel(scene_token, channel=channel, imsize=imsize)
+    def render_pointcloud_channel(self) -> None:
+        self.explorer.render_pointcloud_channel()
 
 
 class NuScenesExplorer:
@@ -1094,7 +1094,7 @@ class NuScenesExplorer:
 
     def save_sample_data(self, start_sample_token: str, channel: str='RADAR_FRONT', with_anns: bool=True,
                            box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=1) -> None:
+                           nsweeps: int=1) -> None :
         """
         Render and save sample data into picture.
         :param sample_token_list: List of all sample token.
@@ -1103,6 +1103,7 @@ class NuScenesExplorer:
         :param axes_limit: Axes limit for lidar and radar (measured in meters).
         :param ax: Axes onto which to render.
         :param nsweeps: Number of sweeps for lidar and radar.
+        :return <list>. Information about pictures: scene name, sample number number and channel.
         """
         
         # get the list of sample token
@@ -1251,38 +1252,36 @@ class NuScenesExplorer:
             pic_id += 1
             plt.axis('off')
             plt.cla()
+            
+        # Log information about the picture
+        scene_rec = self.nusc.get('scene', sample_rec['scene_token'])
+        inf_list = [scene_rec['name'], len(sample_token_list), channel]
+        with open("./pic_tmp/inf_list.txt","w") as f:
+            for i in inf_list:
+                f.write(str(i))
+                f.write(',')
 
-    def render_pointcloud_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
+    
+    def render_pointcloud_channel(self) -> None:
         """
         Renders a full scene for a particular camera channel.
-        :param scene_token: Unique identifier of scene to render.
-        :param channel: Channel to render.
-        :param imsize: Size of image to render. The larger the slower this will run.
-        :return:
         """
-
-        valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
-                          'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
-
-        assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
-        assert channel in valid_channels, 'Input channel {} not valid.'.format(channel)
-
-        # Get records from DB
-        scene_rec = self.nusc.get('scene', scene_token)
-        sample_rec = self.nusc.get('sample', scene_rec['first_sample_token'])
-        sd_rec = self.nusc.get('sample_data', sample_rec['data'][channel])
-
+        
+        # Get the information about pictures: scene name, sample number number and channel.
+        inf_list = []
+        with open("./pic_tmp/inf_list.txt","r") as f:
+            for line in f:
+                inf_list = line.strip('\n').split(',')
+        scene_name = inf_list [0]
+        sample_num = inf_list [1]
+        channel = inf_list [2]
+        
         # Open CV init
-        name = '{}: {} (Space to pause, ESC to exit)'.format(scene_rec['name'], channel)
+        name = '{}: {} (Space to pause, ESC to exit)'.format(scene_name, channel)
         cv2.namedWindow(name)
         cv2.moveWindow(name, 0, 0)
 
-        has_more_frames = True
-        for pic_id in range(22):
-
-            # Get data from DB
-            impath, boxes, camera_intrinsic = self.nusc.get_sample_data(sd_rec['token'],
-                                                                        box_vis_level=BoxVisibility.ANY)
+        for pic_id in range(int(sample_num)):
 
             impath = './pic_tmp/'+str(pic_id)+'.png'
             # Load and render
@@ -1291,10 +1290,9 @@ class NuScenesExplorer:
             im = cv2.imread(impath)
 
             # Render
-            im = cv2.resize(im, imsize)
             cv2.imshow(name, im)
 
-            key = cv2.waitKey(10)  # Images stored at approx 10 Hz, so wait 10 ms.
+            key = cv2.waitKey(100)  # Images stored at approx 10 Hz, so wait 10 ms.
             if key == 32:  # If space is pressed, pause.
                 key = cv2.waitKey()
 
@@ -1302,10 +1300,6 @@ class NuScenesExplorer:
                 cv2.destroyAllWindows()
                 break
 
-            if not sd_rec['next'] == "":
-                sd_rec = self.nusc.get('sample_data', sd_rec['next'])
-            else:
-                has_more_frames = False
 
         cv2.destroyAllWindows()
         
