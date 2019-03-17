@@ -410,6 +410,10 @@ class NuScenes:
     def render_pointcloud_channel(self) -> None:
         self.explorer.render_pointcloud_channel()
 
+    def get_pointcloud_position(self, pointsensor_token: str, axes_limit: float=40) -> Tuple:
+        points = self.explorer.get_pointcloud_position(pointsensor_token)
+        return points
+
 
 class NuScenesExplorer:
     """ Helper class to list and visualize NuScenes data. These are meant to serve as tutorials and templates for
@@ -1302,4 +1306,32 @@ class NuScenesExplorer:
 
 
         cv2.destroyAllWindows()
+ 
+
+    def get_pointcloud_position(self, pointsensor_token: str) -> Tuple:
+        """
+        Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
+        plane.
+        :param pointsensor_token: Lidar/radar sample_data token.
+        :param camera_token: Camera sample_data token.
+        :return (pointcloud <np.float: 2, n)>).
+        """
+
+        fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+        pointsensor_token = '3388933b59444c5db71fade0bbfef470'
+        data_path, _, _ = self.nusc.get_sample_data(pointsensor_token)
+
+        pc = LidarPointCloud.from_file(data_path)
         
+        # Get the right view
+        view = np.eye(4)   
+        points = view_points(pc.points[:3, :], view, normalize=False)
+        
+        # Plot the pointcloud
+        ax.scatter(points[0, :], points[1, :], c=points[2, :], s=1)
+        ax.set_xlim(-40, 40)
+        ax.set_ylim(-40, 40)
+        ax.axis('off')
+        ax.set_aspect('equal')
+        
+        return points
