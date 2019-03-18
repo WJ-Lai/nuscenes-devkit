@@ -414,8 +414,8 @@ class NuScenes:
         points = self.explorer.get_pointcloud_position(pointsensor_token)
         return points
     
-    def plot_pointcloud_prediction(self, obj_mean) -> None:
-        self.plot_pointcloud_prediction(obj_mean)
+    def plot_pointcloud_prediction(self, points, obj_mean) -> None:
+        self.explorer.plot_pointcloud_prediction(points, obj_mean)
 
 
 class NuScenesExplorer:
@@ -1342,7 +1342,7 @@ class NuScenesExplorer:
         
         return points
     
-    def plot_pointcloud_prediction(self, obj_mean) -> None:
+    def plot_pointcloud_prediction(self, points, obj_mean) -> None:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -1350,25 +1350,13 @@ class NuScenesExplorer:
         :param camera_token: Camera sample_data token.
         :return (pointcloud <np.float: 2, n)>).
         """
-
-#         pointsensor = self.nusc.get('sample_data', pointsensor_token)
-#         pcl_path, _, _ = self.nusc.get_sample_data(pointsensor_token)
-
-#         if pointsensor['sensor_modality'] == 'lidar':
-#             pc = LidarPointCloud.from_file(pcl_path)
-#         else:
-#             pc = RadarPointCloud.from_file(pcl_path)
         
-#         # Get the right view
-#         view = np.eye(4)   
-#         points = view_points(pc.points[:3, :], view, normalize=False)
-        
-#         # Plot the pointcloud
-#         fig, ax = plt.subplots(1, 1, figsize=(9, 9))
-#         ax.scatter(points[0, :], points[1, :], c=points[2, :], s=1)
-#         ax.set_xlim(-40, 40)
-#         ax.set_ylim(-40, 40)
-#         ax.axis('off')
-#         ax.set_aspect('equal')
-        
-        return points
+        # Get the right view
+        view = np.eye(4)   
+        # Plot the pointcloud
+        fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+        ax.scatter(points[0, :], points[1, :], c=points[2, :], s=1)
+        ax.set_xlim(-40, 40)
+        ax.set_ylim(-40, 40)
+        ax.axis('off')
+        ax.set_aspect('equal')
