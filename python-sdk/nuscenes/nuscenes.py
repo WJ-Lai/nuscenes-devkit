@@ -20,6 +20,8 @@ from pyquaternion import Quaternion
 import sklearn.metrics
 from tqdm import tqdm
 
+from matplotlib.patches import Ellipse, Circle
+
 from nuscenes.utils.map_mask import MapMask
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
@@ -414,8 +416,8 @@ class NuScenes:
         points = self.explorer.get_pointcloud_position(pointsensor_token)
         return points
     
-    def plot_pointcloud_prediction(self, points, obj_mean) -> None:
-        self.explorer.plot_pointcloud_prediction(points, obj_mean)
+    def plot_pointcloud_prediction(self, points, obj_line) -> None:
+        self.explorer.plot_pointcloud_prediction(points, obj_line)
 
 
 class NuScenesExplorer:
@@ -1342,7 +1344,7 @@ class NuScenesExplorer:
         
         return points
     
-    def plot_pointcloud_prediction(self, points, obj_mean) -> None:
+    def plot_pointcloud_prediction(self, points, obj_line) -> None:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -1356,6 +1358,12 @@ class NuScenesExplorer:
         # Plot the pointcloud
         fig, ax = plt.subplots(1, 1, figsize=(9, 9))
         ax.scatter(points[0, :], points[1, :], c=points[2, :], s=1)
+        
+        # Get the prediction
+        for i in range(obj_line.shape[0]):
+            cir1 = Circle(xy = (obj_line[i][0], obj_line[i][1]), radius=obj_line[i][2], color ='r', fill=False) 
+            ax.add_patch(cir1)
+        
         ax.set_xlim(-40, 40)
         ax.set_ylim(-40, 40)
         ax.axis('off')
