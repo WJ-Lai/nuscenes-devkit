@@ -409,15 +409,15 @@ class NuScenes:
         self.explorer.save_sample_data(start_sample_token, channel, with_anns, 
                                        box_vis_level, axes_limit, ax, nsweeps=nsweeps)
 
-    def render_pointcloud_channel(self) -> None:
-        self.explorer.render_pointcloud_channel()
+    def render_pointcloud_channel(self, filename: str, imsize: Tuple[float, float]=(500, 500)) -> None:
+        self.explorer.render_pointcloud_channel(filename, imsize)
 
     def get_pointcloud_position(self, pointsensor_token: str, axes_limit: float=40) -> Tuple:
         points = self.explorer.get_pointcloud_position(pointsensor_token)
         return points
     
-    def plot_pointcloud_prediction(self, points, obj_line) -> None:
-        self.explorer.plot_pointcloud_prediction(points, obj_line)
+    def plot_pointcloud_prediction(self, points, obj_line, pre_id) -> None:
+        self.explorer.plot_pointcloud_prediction(points, obj_line, pre_id)
 
 
 class NuScenesExplorer:
@@ -1234,7 +1234,7 @@ class NuScenesExplorer:
 
                 # Init axes.
                 if ax is None:
-                    fig, ax = plt.subplots(1, 1, figsize=(9, 16))
+                    fig, ax = plt.subplots(1, 1, figsize=(9, 9))
 
                 # Show image.
                 ax.imshow(data)
@@ -1271,7 +1271,7 @@ class NuScenesExplorer:
                 f.write(',')
 
     
-    def render_pointcloud_channel(self) -> None:
+    def render_pointcloud_channel(self, filename: str, imsize: Tuple[float, float]=(500, 500)) -> None:
         """
         Renders a full scene for a particular camera channel.
         """
@@ -1292,13 +1292,15 @@ class NuScenesExplorer:
 
         for pic_id in range(int(sample_num)):
 
-            impath = './pic_tmp/'+str(pic_id)+'.png'
+            impath = './'+ filename +'/'+str(pic_id)+'.png'
             # Load and render
             if not osp.exists(impath):
                 raise Exception('Error: Missing image %s' % impath)
+            
             im = cv2.imread(impath)
 
             # Render
+            im = cv2.resize(im, imsize)
             cv2.imshow(name, im)
 
             key = cv2.waitKey(100)  # Images stored at approx 10 Hz, so wait 10 ms.
@@ -1344,7 +1346,7 @@ class NuScenesExplorer:
         
         return points
     
-    def plot_pointcloud_prediction(self, points, obj_line) -> None:
+    def plot_pointcloud_prediction(self, points, obj_line, pre_id) -> None:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -1364,7 +1366,16 @@ class NuScenesExplorer:
             cir1 = Circle(xy = (obj_line[i][0], obj_line[i][1]), radius=obj_line[i][2], color ='r', fill=False) 
             ax.add_patch(cir1)
         
-        ax.set_xlim(-40, 40)
-        ax.set_ylim(-40, 40)
+        axlim = 40
+        ax.set_xlim(-axlim, axlim)
+        ax.set_ylim(-axlim, axlim)
+        ax.set_title('RADAR')
         ax.axis('off')
         ax.set_aspect('equal')
+        
+        pre_name = './pre_tmp/'+str(pre_id)+'.png'
+        plt.savefig(pre_name)
+        plt.axis('off')
+        plt.cla()
+        
+        

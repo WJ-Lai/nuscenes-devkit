@@ -1,1 +1,0 @@
-scene-0004,40,LIDAR_TOP,
